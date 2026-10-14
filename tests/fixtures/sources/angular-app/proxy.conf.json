@@ -1,0 +1,7 @@
+{
+  "/api": {
+    "target": "https://paygw-api.corp.acme.com",
+    "secure": false,
+    "changeOrigin": true
+  }
+}

@@ -1,0 +1,9 @@
+# Policy used with the fixtures: what the user adds on top of the Git harvest.
+organization:
+  - {value: Acme, category: company}
+  - {value: PAYGW, category: system}
+
+allow:
+  # Private packages are kept as is (decision 4); so are internal registry hosts.
+  private_packages: ["@acme/ui-kit", "@acme:registry", acme-common, acme_common]
+  registries: [pypi.corp.acme.com, npm.corp.acme.com, registry.corp.acme.com]

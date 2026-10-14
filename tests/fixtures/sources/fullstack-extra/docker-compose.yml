@@ -1,0 +1,13 @@
+# Local stack — maintained by 王小明
+services:
+  api:
+    build: ./backend
+    image: registry.corp.acme.com/paygw/api:1.4.2
+    environment:
+      DATABASE_URL: "postgresql://paygw_app:Pr0d-Pa55w0rd!@db01.corp.acme.com:5432/paygw"
+    labels:
+      maintainer: "john.doe@corp.acme.com"
+  web:
+    build: ./frontend
+    ports:
+      - "4200:80"

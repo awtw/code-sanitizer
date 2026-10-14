@@ -1,0 +1,10 @@
+name: ci
+on: [push]
+jobs:
+  test:
+    runs-on: [self-hosted, acme-runner]
+    steps:
+      - uses: actions/checkout@v4
+      - run: pip install -r requirements.txt && pytest
+      - name: notify
+        run: echo "failed, mail john.doe@corp.acme.com"

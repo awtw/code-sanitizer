@@ -1,0 +1,144 @@
+# Expected results for the fixtures built by build_fixtures.py.
+# Used as the acceptance oracle for each implementation phase.
+#
+#   forbidden            case-insensitive substrings that must not appear in any
+#                        deliverable file content or path
+#   org_terms            organisation terms that may only remain inside
+#                        allowed_org_tokens (identifiers, selectors, private packages,
+#                        private registries — all kept by decision)
+#   must_preserve        exact snippets that must survive unchanged
+#   absent_paths         paths that must not exist in the deliverable
+#   encodings            byte-level properties that must be kept
+
+common:
+  forbidden:
+    # developer identities
+    - John Doe
+    - john.doe
+    - jdoe
+    - Jane Smith
+    - jane.smith
+    - jsmith
+    - 12345678+
+    - 王小明
+    - wang.xiaoming
+    - acme-org
+    # secrets
+    - Pr0d-Pa55w0rd!
+    - 9f8c2d7e6b5a4f3e2d1c0b9a8f7e6d5c
+    - AKIAIOSFODNN7EXAMPLE
+    - 3f9a1c2b4d5e6f708192a3b4c5d6e7f8
+    - fake-pypi-token
+    - fake-npm-token
+    - fake-git-credential
+  org_terms: [acme, paygw]
+  allowed_org_tokens:
+    - AcmeClient
+    - acme_client
+    - acme_common
+    - acme-common
+    - "@acme/ui-kit"
+    - "@acme:registry"
+    - acme-root
+    - acme-header
+    - acme-button
+    - $acme-blue
+    - '"prefix": "acme"'
+    - pypi.corp.acme.com
+    - npm.corp.acme.com
+    - registry.corp.acme.com
+
+fastapi-app:
+  identities:
+    people:
+      - {name: John Doe, emails: [john.doe@corp.acme.com]}
+      - {name: Jane Smith, emails: [12345678+jsmith-acme@users.noreply.github.com]}
+      - {name: 王小明, emails: [wang.xiaoming@corp.acme.com]}
+    accounts: [jdoe, jsmith-acme]
+    ignored_people: [noreply@github.com]   # GitHub web-flow committer, public service identity
+    orgs: [acme-org]
+    hosts: [github.corp.acme.com]
+    repos: [paygw-api]
+    email_domains: [corp.acme.com]
+  must_preserve:
+    app/main.py: ["#!/usr/bin/env python3\n# -*- coding: utf-8 -*-\n"]
+    app/routers/payments.py:
+      - "# noqa: E501"
+      - "# type: ignore[no-untyped-def]"
+      - 'query = "SELECT * FROM payments WHERE id = " + str(payment_id)'
+      - "from acme_common import mask_card"
+    app/clients/acme_client.py: ["class AcmeClient:"]
+    requirements.txt: ["./packages/acme-common"]
+  must_exist:
+    .env.example: ["DATABASE_URL=", "JWT_SECRET="]
+  absent_paths:
+    - .git
+    - .DS_Store
+    - Thumbs.db
+    - .idea
+    - .vscode
+    - .github
+    - CODEOWNERS
+    - .mailmap
+    - app/__pycache__
+    - app.log
+    - .coverage
+    - .pytest_cache
+    - .env
+    - app/routers/payments.py.orig
+    - FSMONITOR_TRIGGERED
+  encodings:
+    app/legacy.py: {bom: true, newline: crlf}
+
+angular-app:
+  identities:
+    people:
+      - {name: John Doe, emails: [john.doe@corp.acme.com]}
+      - {name: Jane Smith, emails: [12345678+jsmith-acme@users.noreply.github.com]}
+      - {name: 王小明, emails: [wang.xiaoming@corp.acme.com]}
+    accounts: [jsmith-acme]
+    orgs: [acme-org]
+    hosts: []
+    repos: [paygw-portal]
+    email_domains: [corp.acme.com]
+  must_preserve:
+    src/main.ts: ["/* eslint-disable no-console */"]
+    src/app/header.component.ts: ["// @ts-ignore", "selector: 'acme-header'"]
+    src/app/app.component.ts: ["selector: 'acme-root'", "from '@acme/ui-kit'"]
+    src/index.html: ["<acme-root></acme-root>"]
+    angular.json: ['"prefix": "acme"']
+    tsconfig.json: ['"@acme/ui-kit": ["packages/ui-kit/src/index.ts"]']
+    .npmrc: ["@acme:registry=https://npm.corp.acme.com/"]
+  absent_paths:
+    - .git
+    - .DS_Store
+    - .angular
+    - npm-debug.log
+    - dist
+    - node_modules
+    - .vscode
+    - .env.local
+    - src/app/.app.component.ts.swp
+
+fullstack:
+  # backend/ = fastapi-app, frontend/ = angular-app (all their expectations apply with the prefix)
+  compose: {backend: fastapi-app, frontend: angular-app}
+  identities:
+    people:
+      - {name: John Doe, emails: [john.doe@corp.acme.com]}
+      - {name: Jane Smith, emails: [12345678+jsmith-acme@users.noreply.github.com]}
+      - {name: 王小明, emails: [wang.xiaoming@corp.acme.com]}
+    accounts: [jdoe, jsmith-acme]
+    orgs: [acme-org]
+    hosts: []
+    repos: [paygw]
+    email_domains: [corp.acme.com]
+    remote_credentials: 1      # https://jdoe:<secret>@github.com/... must be reported as a secret
+  absent_paths:
+    - .git
+    - tools/.git
+    - frontend/.git
+    - .DS_Store
+    - .github
+    - CODEOWNERS
+    - __MACOSX

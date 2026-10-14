@@ -1,0 +1,9 @@
+name: paygw-ci
+on: [push, pull_request]
+jobs:
+  build:
+    runs-on: [self-hosted, acme-runner]
+    steps:
+      - uses: actions/checkout@v4
+      - run: cd backend && pip install -r requirements.txt && pytest
+      - run: cd frontend && npm ci && npx ng build

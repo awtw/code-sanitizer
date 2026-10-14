@@ -1,0 +1,18 @@
+[project]
+name = "paygw-api"
+version = "1.4.2"
+description = "Acme PAYGW payment gateway"
+authors = [
+  {name = "John Doe", email = "john.doe@corp.acme.com"},
+  {name = "Jane Smith", email = "12345678+jsmith-acme@users.noreply.github.com"},
+]
+requires-python = ">=3.10"
+dependencies = ["fastapi>=0.110", "httpx>=0.27", "acme-common"]
+
+[project.urls]
+Repository = "https://github.com/acme-org/paygw-api"
+Issues = "https://github.com/acme-org/paygw-api/issues"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]

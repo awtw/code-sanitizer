@@ -1,0 +1,38 @@
+{
+  "name": "paygw-portal",
+  "version": "1.4.2",
+  "description": "Acme PAYGW customer portal",
+  "author": "John Doe <john.doe@corp.acme.com>",
+  "contributors": [
+    "Jane Smith <12345678+jsmith-acme@users.noreply.github.com>"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/acme-org/paygw-portal.git"
+  },
+  "homepage": "https://github.com/acme-org/paygw-portal#readme",
+  "bugs": {
+    "url": "https://github.com/acme-org/paygw-portal/issues"
+  },
+  "private": true,
+  "scripts": {
+    "ng": "ng",
+    "build": "ng build",
+    "start": "ng serve --proxy-config proxy.conf.json"
+  },
+  "dependencies": {
+    "@angular/common": "~19.2.0",
+    "@angular/compiler": "~19.2.0",
+    "@angular/core": "~19.2.0",
+    "@angular/platform-browser": "~19.2.0",
+    "rxjs": "~7.8.0",
+    "tslib": "^2.8.0",
+    "zone.js": "~0.15.0"
+  },
+  "devDependencies": {
+    "@angular/build": "~19.2.0",
+    "@angular/cli": "~19.2.0",
+    "@angular/compiler-cli": "~19.2.0",
+    "typescript": "~5.8.0"
+  }
+}
