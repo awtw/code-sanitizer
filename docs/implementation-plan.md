@@ -22,10 +22,14 @@
 | A | 完成 | 三個 fixture 與 `expected.yaml` 驗收標準；原始狀態 pytest、`ng build` 皆通過 |
 | B | 完成 | 安全 ingest（ZIP 路徑穿越、symlink、大小寫碰撞、壓縮比）、dulwich 身分蒐集、tree-sitter 語法情境、機密偵測、`plan.json` |
 | C | 完成 | 輸出副本、`changes.patch`、`.env.example`；三個 fixture 輸出驗收 0 違規，第二次掃描 0 變更，去識別後 pytest 與 `ng build` 仍通過 |
-| D | 未開始 | 驗證目前只在測試中執行；需做成 `sanitizer verify`（隔離 runner、雙版本比較、OpenAPI 比對）與 `export`（殘留掃描阻擋、ZIP） |
+| D | 完成（隔離除外） | `sanitizer verify`：雙版本 L0–L3 比較、FastAPI OpenAPI 契約比對、smoke；`sanitizer export`：殘留掃描（不可略過）、待確認阻擋、決定性 ZIP、`SANITIZATION-NOTES.md`、`manifest.json`、`report.html`。尚未做容器隔離，目前為本機子程序＋環境變數允許清單 |
 | E | 未開始 | Windows／Linux CI 矩陣 |
 
 實作中確立的規則：
+
+- **驗證的基線是「只移除殘存檔」的原始碼**，與輸出只差在文字替換，避免把 `.env` 移除等差異誤判為回歸。
+- **OpenAPI 比對只忽略 `description`、`summary`、`servers` 與 `info`（保留 `version`）**；路徑、參數、schema、回應碼、operationId 必須相同。
+- **Angular fixture 沒有單元測試**（需無頭瀏覽器），在 test profile 中將前端必要層級設為 L0–L1；未設定時判定為 `incomplete`，不會當作通過。
 
 - **字串若與程式符號同名，視為符號引用，不替換、只報告。** 例如 inline template 的 `class="acme-header"` 與 SCSS class、元件 selector 同名，替換會讓樣式失效或 build 失敗。
 - **人員帳號是信箱的 local part 時，整個信箱統一換成 `developer@example.invalid`。**
@@ -109,7 +113,7 @@ sanitizer export ./jobs/review-001 --output ./deliverables
 | 介面 | 僅 CLI |
 | 敏感詞來源 | github.com 相關身分（Git 作者、帳號、org／repo）＋使用者補充 |
 | 假名粒度 | 全部統一為 `developer` |
-| 輸出 Git repo | 不需要 |
+| 輸出 Git repo | 不需要；交付物不含 Git 中繼資料，也不提供建立新 repository 的選項 |
 | 組織資訊（公司名、內部網域、系統代號） | 要替換 |
 | 驗收素材 | 先自建測試專案 |
 | 平台 | Windows、macOS、Linux |

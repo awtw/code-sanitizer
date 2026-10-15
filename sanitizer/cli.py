@@ -3,6 +3,8 @@
     sanitizer identities INPUT --job-dir JOB
     sanitizer scan --job-dir JOB [--policy POLICY]
     sanitizer apply --job-dir JOB --output OUT
+    sanitizer verify --job-dir JOB [--profile TEST_PROFILE]
+    sanitizer export --job-dir JOB --package OUT.zip [--accept-review] [--allow-unqualified]
     sanitizer run INPUT --job-dir JOB --output OUT [--policy POLICY]
 """
 
@@ -12,7 +14,9 @@ import argparse
 import sys
 from pathlib import Path
 
+from .export import step_export
 from .pipeline import IngestError, JobError, step_apply, step_identities, step_scan
+from .verify import step_verify
 
 
 def _print_summary(plan) -> None:
@@ -44,6 +48,31 @@ def _apply(args) -> None:
     print(f"diff: {args.job_dir / 'changes.patch'}")
 
 
+def _verify(args) -> int:
+    report = step_verify(args.job_dir, args.profile)
+    for c in [report["syntax"], *report["comparisons"]]:
+        print(f"  {(c['project'] or '.'):<12} {c['step']:<9} {c['level']}  "
+              f"baseline={c['baseline']:<5} sanitized={c['sanitized']:<5} {c['verdict']}")
+    print(f"delivery status: {report['delivery_status']}  (isolation: {report['isolation']})")
+    for r in report["reasons"]:
+        print(f"  - {r}")
+    print(f"details: {args.job_dir / 'verify.json'}")
+    return 0 if report["delivery_status"] in {"qualified", "incomplete"} else 1
+
+
+def _export(args) -> int:
+    result = step_export(args.job_dir, args.package, args.accept_review, args.allow_unqualified)
+    print(f"report (internal): {result['report']}")
+    if result["blocked"]:
+        print("export blocked:")
+        for b in result["blocked"]:
+            print(f"  - {b}")
+        return 1
+    print(f"package: {result['package']}")
+    print(f"sha256:  {result['package_sha256']}")
+    return 0
+
+
 def _run(args) -> None:
     _identities(args)
     _scan(args)
@@ -69,6 +98,19 @@ def main(argv: list[str] | None = None) -> int:
     p.add_argument("--output", type=Path, required=True)
     p.set_defaults(func=_apply)
 
+    p = sub.add_parser("verify", help="build and test the original and the de-identified copy, then compare")
+    p.add_argument("--job-dir", type=Path, required=True)
+    p.add_argument("--profile", type=Path, help="test profile (required levels, env, per-project settings)")
+    p.set_defaults(func=_verify)
+
+    p = sub.add_parser("export", help="final leak scan and deliverable ZIP")
+    p.add_argument("--job-dir", type=Path, required=True)
+    p.add_argument("--package", type=Path, required=True, help="ZIP file to create")
+    p.add_argument("--accept-review", action="store_true", help="findings marked review were checked by a person")
+    p.add_argument("--allow-unqualified", action="store_true",
+                   help="export even if verification is not qualified (package is labelled UNQUALIFIED)")
+    p.set_defaults(func=_export)
+
     p = sub.add_parser("run", help="identities + scan + apply without stopping for review")
     p.add_argument("input", type=Path)
     p.add_argument("--job-dir", type=Path, required=True)
@@ -78,11 +120,10 @@ def main(argv: list[str] | None = None) -> int:
 
     args = ap.parse_args(argv)
     try:
-        args.func(args)
+        return args.func(args) or 0
     except (IngestError, JobError) as e:
         print(f"error: {e}", file=sys.stderr)
         return 2
-    return 0
 
 
 if __name__ == "__main__":

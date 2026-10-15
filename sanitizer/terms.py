@@ -10,7 +10,6 @@ from pathlib import Path
 
 import yaml
 
-from .identity import Harvest
 
 PERSON = "developer"
 EMAIL = "developer@example.invalid"
@@ -34,6 +33,8 @@ class Policy:
     allow: list[str] = field(default_factory=list)  # substrings that are kept as is (private packages, registries)
     residue_extra: list[str] = field(default_factory=list)
     residue_keep: list[str] = field(default_factory=list)
+    jira_projects: list[str] = field(default_factory=list)
+    gitlab_projects: list[str] = field(default_factory=list)
 
     def allowed(self, text: bytes, start: int, end: int) -> str | None:
         lower = text.lower()
@@ -101,6 +102,9 @@ def load_policy(identities: dict, policy_path: Path | None) -> Policy:
     pol = pol or {}
     doc["organization"] = list(doc.get("organization", [])) + list(pol.get("organization", []))
     terms = _identity_terms(doc)
+    markers = pol.get("internal_markers", {})
+    for domain in markers.get("domains", []):
+        terms.append(Term(domain, REPLACEMENT_DOMAIN, "domain", "internal_markers"))
     for t in pol.get("terms", []):
         terms.append(Term(t["value"], t.get("replace_with", "redacted"), t.get("category", "custom"), "policy"))
     # Deduplicate (case-insensitive); keep the first replacement.
@@ -111,7 +115,8 @@ def load_policy(identities: dict, policy_path: Path | None) -> Policy:
     allow += list(pol.get("allow", {}).get("other", []))
     residue = pol.get("residue", {})
     return Policy(sorted(seen.values(), key=lambda t: -len(t.value)), allow,
-                  list(residue.get("extra", [])), list(residue.get("keep", [])))
+                  list(residue.get("extra", [])), list(residue.get("keep", [])),
+                  list(markers.get("jira_projects", [])), list(markers.get("gitlab_projects", [])))
 
 
 def _is_word(b: int) -> bool:

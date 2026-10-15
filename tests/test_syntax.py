@@ -81,3 +81,11 @@ def test_edits_keep_crlf_and_bom():
     data = b"\xef\xbb\xbf# by jdoe\r\nx = 1\r\n"
     i = data.index(b"jdoe")
     assert apply_edits(data, [Edit(i, i + 4, b"developer")]) == b"\xef\xbb\xbf# by developer\r\nx = 1\r\n"
+
+
+def test_secret_keywords_need_a_word_boundary():
+    from sanitizer.secrets import find_secrets
+
+    assert find_secrets(b'LABEL org.opencontainers.image.authors="jane@example.com"') == []
+    assert [h.kind for h in find_secrets(b'secretKey: "abcdefgh1234"')] == ["assignment"]
+    assert [h.kind for h in find_secrets(b'DB_PASSWORD = "hunter2hunter2"')] == ["assignment"]

@@ -1,0 +1,11 @@
+# Test profile used with the fixtures.
+python: "3.12"
+required_levels: [L0, L1, L2]
+timeout_seconds: 900
+projects:
+  "":                       # fastapi-app at the root
+    smoke: ["/health"]
+  backend:
+    smoke: ["/health"]
+  frontend:
+    required_levels: [L0, L1]   # the fixture has no Angular unit tests (no headless browser in CI)

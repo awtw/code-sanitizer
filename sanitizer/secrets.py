@@ -6,7 +6,9 @@ from __future__ import annotations
 import re
 from dataclasses import dataclass
 
-KEY_WORDS = rb"(?:password|passwd|pwd|secret|token|api[_-]?key|apikey|access[_-]?key|private[_-]?key|auth|dsn|credential)"
+# A keyword must end the word (or be followed by camelCase): "authToken" yes, "authors" no.
+KEY_WORDS = (rb"(?:passwords?|passwd|pwd|secret|token|api[_-]?key|apikey|access[_-]?key|private[_-]?key|auth|dsn"
+             rb"|credentials?)(?-i:(?![a-z]))")
 
 
 @dataclass(frozen=True)

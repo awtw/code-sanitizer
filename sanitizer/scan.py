@@ -19,6 +19,7 @@ from dataclasses import asdict, dataclass, field
 from pathlib import Path
 
 from .secrets import find_secrets
+from .markers import find_markers
 from .syntax import code_tokens, enclosing_token, language_for, regions_for
 from .terms import EMAIL, HOME_PATH_RE, PERSON, Matcher, Policy, case_like, glob_match
 
@@ -139,6 +140,9 @@ def _decode_ok(data: bytes) -> bool:
 def build_plan(root: Path, policy: Policy) -> Plan:
     plan = Plan()
     residue = [r for r in RESIDUE_DEFAULTS + policy.residue_extra if r not in policy.residue_keep]
+    # Original Git objects, signatures, configuration and hooks must never be exported.
+    if ".git" not in residue:
+        residue.append(".git")
     files = _iter_files(root, residue, plan)
 
     # .env files are removed; keep their keys in an .env.example (unless one exists).
@@ -219,6 +223,20 @@ def build_plan(root: Path, policy: Policy) -> Plan:
                 action = "replace"
                 edits.append(Edit(s, e, case_like(original, term.replacement), term.category))
             plan.findings.append(Finding(rel, _line(data, s), term.category, ctx, action, detail))
+
+        for s, e, replacement, category in find_markers(data, policy):
+            if taken(s, e):
+                continue
+            ctx = reg.context_at(s, e)
+            allowed = policy.allowed(data, s, e)
+            if allowed:
+                action, detail = "keep", f"allow-list: {allowed}"
+            elif ctx in {"code", "protected"}:
+                action, detail = "keep", "code symbol"
+            else:
+                action, detail = "replace", replacement.decode()
+                edits.append(Edit(s, e, replacement, category))
+            plan.findings.append(Finding(rel, _line(data, s), category, ctx, action, detail))
 
         # E-mail addresses that are not covered by any known term: possibly an unknown person.
         for m in EMAIL_RE.finditer(data) if rel.rsplit("/", 1)[-1] not in LOCKFILES else ():

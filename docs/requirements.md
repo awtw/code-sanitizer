@@ -16,7 +16,7 @@
 | 介面 | **僅 CLI**，不做 Web UI |
 | 敏感詞來源 | 以 **github.com** 相關資訊為主：Git commit 作者／提交者、remote URL 中的 organization 與 repository、GitHub 帳號、noreply 信箱；再加上使用者補充的詞彙 |
 | 假名粒度 | **所有開發者統一替換為 `developer`**，接手者無法分辨哪幾段是同一人所寫 |
-| 輸出 Git repo | **不需要**，交付包不含任何 Git 中繼資料 |
+| 輸出 Git repo | **不需要**，交付包不含任何 Git 中繼資料，也不建立新的 repository |
 | 組織資訊 | **公司名、內部網域、系統代號也要替換** |
 | 驗收素材 | 先自建測試專案 |
 | 執行平台 | Windows、macOS、Linux 皆須支援 |
@@ -90,6 +90,8 @@
 | 目標 | 預設 | 限制與原因 |
 | --- | --- | --- |
 | `.git` 目錄或 worktree 的 `.git` 檔 | 先蒐集身分（FR10）後，從輸出移除，含巢狀 repository | 不修改原始 Git 紀錄；不執行 hook |
+| Git author／committer、GPG／SSH 簽章、remote／config／hooks | 來源 `.git` 強制移除，包含物件、tag、reflog 與設定中的 token；選擇重建時僅以處理後內容建立匿名、無簽章提交 | 不複製舊歷史、不繼承全域設定；身分固定為 `developer <developer@example.invalid>` |
+| TODO 帳號、內部 IP、Jira／GitLab Issue、內部網域 | 預設偵測括號式 TODO／FIXME／XXX 帳號、RFC1918、IPv6 ULA 及 `.internal`／`.local`／`.corp`；其他網域與專案鍵由 `internal_markers` 政策補充 | 遵循語法情境與允許清單；未知裸 Issue 編號不推斷 |
 | 一般註解中的身分資訊 | 只替換命中的文字，保持語法與換行（行號不變） | 不使用全檔字串取代 |
 | **字串常數**中的身分資訊 | 替換命中的文字，保持引號、跳脫與長度無關的語法 | 可能影響執行行為 → 須通過第 5 節驗證；位置列入報告供抽查 |
 | **設定檔**（JSON / YAML / TOML / INI / `.env.example` / XML） | 替換命中值，保留格式與其他鍵 | 用格式感知的方式修改，不破壞結構 |

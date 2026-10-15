@@ -97,6 +97,7 @@ def step_apply(job: Path, output: Path) -> Plan:
     tmp = output.with_name(output.name + ".partial")
     if tmp.exists():
         shutil.rmtree(tmp)
+    tmp.mkdir(parents=True)
     removed = set(plan.removals)
     patch: list[str] = []
     for p in sorted(snap.rglob("*")):
